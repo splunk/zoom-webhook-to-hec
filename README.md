@@ -12,6 +12,10 @@ This application will create a lambda function, with an API Gateway trigger. Whe
 
 `https://<your_api_gateway_url>/Prod/zoom-to-hec`
 
+## Data Flow Diagram
+
+![Zoom Webhook to Splunk HEC Data Flow Diagram](./media/zoom-webhook-to-hec-dfd.png)
+
 ## License
 
 Apache License 2.0 (undefined)
