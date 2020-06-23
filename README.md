@@ -12,7 +12,7 @@ This application will create a lambda function, with an API Gateway trigger. Whe
 
 The following parameters will be required during the setup and installation of the Serverless Application:
 
-- Zoom Verification Token
+- Zoom Webhook [Verification Token](https://marketplace.zoom.us/docs/guides/build/webhook-only-app#features-2)
 - Splunk HTTP Event Collector (HEC) URL (e.g: `https://your.server.com`)
 - Splunk HTTP Event Collector (HEC) Port (e.g: `443`)
 - Splunk HTTP Event Collector (HEC) Token
