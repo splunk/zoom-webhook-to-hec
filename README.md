@@ -26,6 +26,13 @@ The following parameters will be required during the setup and installation of t
 
 ![Zoom Webhook to Splunk HEC Data Flow Diagram](./media/zoom-webhook-to-hec-dfd.png)
 
+1. Zoom Webhook POST HTTP Request to AWS API Gateway  endpoint
+2. Zoom Webhook HTTP Request Header contains Verification Token and is validated via the AWS Lambda Authorizer 
+3. AWS Lambda Authorizer checks for Zoom Verification Token match, if there is a MATCH, proceed , otherwise, DROP the HTTP request
+4. The Zoom Webhook HTTP Body payload is remapped via the AWS API Gateway into a Splunk HTTP Event Collector (HEC) payload (index, source, sourcetype, event, time) 
+5. The AWS API Gateway forwards the final remapped payload through Splunk HTTP Event Collector (HEC )
+6. The Splunk HTTP Event Collector will respond back with an HTTP Status Code and this will be passthrough the AWS API Gateway and return it to Zoom (Zoom Webhook Call Logs rely on the responses to ensure the Webhook Event has been transmitted successfully, or it has to retry)
+
 ## License
 
 Copyright 2020 Splunk Inc.
