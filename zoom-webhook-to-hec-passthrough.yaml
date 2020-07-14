@@ -127,7 +127,7 @@ Resources:
       Description: ''
       MemorySize: 128
       Timeout: 3
-      FunctionName: !Sub ${AWS::StackName}-zoom-authorizer
+      FunctionName: !Sub ${AWS::StackName}-Auth
       Role: !GetAtt ZoomWebhookAuthorizerIAMRole.Arn
   ZoomWebhookAuthorizerIAMRole:
     Type: 'AWS::IAM::Role'
