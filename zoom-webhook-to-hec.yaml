@@ -1,0 +1,158 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Zoom Webhook to Splunk HTTP Event Collector (HEC)
+Parameters:
+  ParamZoomSecretToken:
+    Type: String
+    Description: Zoom Webhook Secret Token
+  ParamSplunkHECURL:
+    Type: String
+    Description: 'Splunk HTTP Event Collector (HEC) URL (e.g.: https://your.server.com)'
+  ParamSplunkHECPort:
+    Type: String
+    Default: '443'
+    Description: 'Splunk HTTP Event Collector (HEC) Port (e.g.: 443)'
+  ParamSplunkHECToken:
+    Type: String
+    Description: 'Splunk HTTP Event Collector (HEC) Token (e.g.: 12345678-1234-1234-1234-123456789012)'
+  ParamSplunkIndex:
+    Type: String
+    Default: zoom
+    Description: 'Splunk Index (e.g.: zoom)'
+Resources:
+  ZoomWebhookReceiverApiGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: Zoom-Webhook-Receiver-API
+  ZoomWebhookReceiverApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - ZoomWebhookReceiverApiMethod
+    Properties:
+      RestApiId: !Ref ZoomWebhookReceiverApiGateway
+  ZoomWebhookReceiverApiStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      DeploymentId: !Ref ZoomWebhookReceiverApiDeployment
+      RestApiId: !Ref ZoomWebhookReceiverApiGateway
+      StageName: Prod
+  ZoomWebhookReceiverApiResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ZoomWebhookReceiverApiGateway
+      ParentId: !GetAtt ZoomWebhookReceiverApiGateway.RootResourceId
+      PathPart: zoom-to-hec
+  ZoomWebhookReceiverApiMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ZoomWebhookReceiverApiGateway
+      ResourceId: !Ref ZoomWebhookReceiverApiResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      MethodResponses:
+        - StatusCode: '200'
+        - StatusCode: '400'
+        - StatusCode: '401'
+        - StatusCode: '403'
+        - StatusCode: '500'
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ZoomWebhookReceiverLambda.Arn}/invocations
+  ZoomWebhookReceiverLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt ZoomWebhookReceiverLambda.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ZoomWebhookReceiverApiGateway}/*/*
+  ZoomWebhookReceiverLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      Runtime: nodejs18.x
+      CodeUri: s3://zoom-webhook-splunk-hec/function.zip
+      Description: ''
+      MemorySize: 128
+      Timeout: 3
+      FunctionName: !Sub ${AWS::StackName}-Zoom-Webhook-Receiver
+      Role: !GetAtt ZoomWebhookReceiverLambdaIAMRole.Arn
+      FunctionUrlConfig:
+        AuthType: NONE
+  ZoomWebhookReceiverLambdaIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-Zoom-Webhook-Receiver
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${AWS::StackName}-Zoom-Webhook-Receiver:*
+              - Effect: Allow
+                Action:
+                  - kms:Decrypt
+                Resource:
+                  - !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/alias/aws/ssm
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameters
+                Resource:
+                  - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/zoom/secret_token
+                  - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/splunk/hec_url
+                  - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/splunk/hec_port
+                  - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/splunk/hec_token
+                  - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/splunk/hec_index
+  ZoomSecretToken:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /zoom/secret_token
+      Type: String
+      Value: !Ref ParamZoomSecretToken
+  SplunkHECURL:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /splunk/hec_url
+      Type: String
+      Value: !Ref ParamSplunkHECURL
+  SplunkHECPort:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /splunk/hec_port
+      Type: String
+      Value: !Ref ParamSplunkHECPort
+  SplunkHECToken:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /splunk/hec_token
+      Type: String
+      Value: !Ref ParamSplunkHECToken
+  SplunkHECIndex:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /splunk/hec_index
+      Type: String
+      Value: !Ref ParamSplunkIndex
+Outputs:
+  ApiUrl:
+    Value: !Join
+      - ''
+      - - https://
+        - !Ref ZoomWebhookReceiverApiGateway
+        - .execute-api.
+        - !Sub ${AWS::Region}
+        - .amazonaws.com/Prod/zoom-to-hec

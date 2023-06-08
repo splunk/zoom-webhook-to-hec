@@ -1,0 +1,29 @@
+{
+  "name": "zoom-webhook-to-hec",
+  "version": "1.1.0",
+  "description": "Zoom-Webhook-to-Splunk-HTTP-Event-Collector Serverless Application for AWS",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "clean": "make clean",
+    "dependencies": "make deps",
+    "package": "make package"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/splunk/zoom-webhook-to-hec.git"
+  },
+  "author": "Philippe Tang <ptang@splunk.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/splunk/zoom-webhook-to-hec/issues"
+  },
+  "homepage": "https://github.com/splunk/zoom-webhook-to-hec#readme",
+  "dependencies": {
+    "aws-sdk": "^2.1392.0",
+    "axios": "^1.4.0"
+  }
+}
