@@ -75,7 +75,7 @@ Resources:
       Description: ''
       MemorySize: 128
       Timeout: 3
-      FunctionName: !Sub ${AWS::StackName}-Zoom-Webhook-Receiver
+      FunctionName: !Sub ${AWS::StackName}-ZWR
       Role: !GetAtt ZoomWebhookReceiverLambdaIAMRole.Arn
       FunctionUrlConfig:
         AuthType: NONE
@@ -92,7 +92,7 @@ Resources:
             Action:
               - sts:AssumeRole
       Policies:
-        - PolicyName: !Sub ${AWS::StackName}-Zoom-Webhook-Receiver
+        - PolicyName: !Sub ${AWS::StackName}-ZWR
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -102,7 +102,7 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource:
-                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${AWS::StackName}-Zoom-Webhook-Receiver:*
+                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${AWS::StackName}-ZWR:*
               - Effect: Allow
                 Action:
                   - kms:Decrypt
